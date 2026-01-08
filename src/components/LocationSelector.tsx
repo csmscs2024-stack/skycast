@@ -12,7 +12,7 @@ interface LocationSelectorProps {
   selectedDistrict?: string;
 }
 
-const DISTRICTS = ['Bankura', 'Purulia', 'Paschim Medinipur', 'Jhargram'];
+const DISTRICTS = ['Bankura', 'Bardhaman', 'Purulia', 'Paschim Medinipur', 'Jhargram'];
 
 export function LocationSelector({ onLocationSelect, selectedDistrict }: LocationSelectorProps) {
   const { t } = useLanguage();

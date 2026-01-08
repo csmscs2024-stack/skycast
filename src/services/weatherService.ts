@@ -5,6 +5,14 @@ export interface WeatherInfo {
   forecast: WeatherForecast[];
 }
 
+const DISTRICT_COORDS: Record<string, { lat: number; lon: number }> = {
+  'Bankura': { lat: 23.2324, lon: 87.0697 },
+  'Bardhaman': { lat: 23.2550, lon: 87.8550 },
+  'Purulia': { lat: 23.3322, lon: 86.3644 },
+  'Paschim Medinipur': { lat: 22.4292, lon: 87.3200 },
+  'Jhargram': { lat: 22.4525, lon: 86.9880 },
+};
+
 export async function getWeatherData(district: string): Promise<WeatherInfo> {
   const today = new Date().toISOString().split('T')[0];
 
@@ -23,9 +31,14 @@ export async function getWeatherData(district: string): Promise<WeatherInfo> {
     .order('forecast_date', { ascending: true })
     .limit(7);
 
-  if (!currentData) {
-    await generateMockWeatherData(district);
+  if (!currentData || !forecastData || forecastData.length === 0) {
+    await fetchRealWeatherData(district);
     return getWeatherData(district);
+  }
+
+  const isOldData = currentData && new Date(currentData.created_at).getTime() < Date.now() - 3600000;
+  if (isOldData) {
+    fetchRealWeatherData(district);
   }
 
   return {
@@ -34,47 +47,64 @@ export async function getWeatherData(district: string): Promise<WeatherInfo> {
   };
 }
 
-async function generateMockWeatherData(district: string): Promise<void> {
-  const today = new Date();
+async function fetchRealWeatherData(district: string): Promise<void> {
+  const coords = DISTRICT_COORDS[district];
+  if (!coords) return;
 
-  const weatherConditions = ['Clear', 'Partly Cloudy', 'Cloudy', 'Rainy', 'Thunderstorm'];
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,relative_humidity_2m_mean,wind_speed_10m_max,weather_code&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code&timezone=Asia/Kolkata`;
 
-  const currentWeather: Partial<WeatherData> = {
-    district,
-    date: today.toISOString().split('T')[0],
-    temperature_max: 28 + Math.random() * 8,
-    temperature_min: 18 + Math.random() * 8,
-    rainfall_mm: Math.random() > 0.7 ? Math.random() * 20 : 0,
-    humidity: 60 + Math.random() * 30,
-    rainfall_probability: Math.random() * 100,
-    wind_speed: 5 + Math.random() * 10,
-    weather_condition: weatherConditions[Math.floor(Math.random() * weatherConditions.length)],
-  };
+    const response = await fetch(url);
+    const data = await response.json();
 
-  await supabase
-    .from('weather_data')
-    .upsert(currentWeather, { onConflict: 'district,date' });
+    const today = new Date().toISOString().split('T')[0];
 
-  const forecasts: Partial<WeatherForecast>[] = [];
-  for (let i = 1; i <= 7; i++) {
-    const forecastDate = new Date(today);
-    forecastDate.setDate(today.getDate() + i);
-
-    forecasts.push({
+    const currentWeather: Partial<WeatherData> = {
       district,
-      forecast_date: forecastDate.toISOString().split('T')[0],
-      temperature_max: 28 + Math.random() * 8,
-      temperature_min: 18 + Math.random() * 8,
-      rainfall_mm: Math.random() > 0.6 ? Math.random() * 25 : 0,
-      rainfall_probability: Math.random() * 100,
-      humidity: 60 + Math.random() * 30,
-      weather_condition: weatherConditions[Math.floor(Math.random() * weatherConditions.length)],
-    });
-  }
+      date: today,
+      temperature_max: data.daily.temperature_2m_max[0],
+      temperature_min: data.daily.temperature_2m_min[0],
+      rainfall_mm: data.daily.precipitation_sum[0] || 0,
+      humidity: data.current.relative_humidity_2m,
+      rainfall_probability: data.daily.precipitation_probability_max[0] || 0,
+      wind_speed: data.current.wind_speed_10m,
+      weather_condition: getWeatherCondition(data.current.weather_code),
+    };
 
-  await supabase
-    .from('weather_forecast')
-    .upsert(forecasts, { onConflict: 'district,forecast_date' });
+    await supabase
+      .from('weather_data')
+      .upsert(currentWeather, { onConflict: 'district,date' });
+
+    const forecasts: Partial<WeatherForecast>[] = [];
+    for (let i = 1; i < Math.min(7, data.daily.time.length); i++) {
+      forecasts.push({
+        district,
+        forecast_date: data.daily.time[i],
+        temperature_max: data.daily.temperature_2m_max[i],
+        temperature_min: data.daily.temperature_2m_min[i],
+        rainfall_mm: data.daily.precipitation_sum[i] || 0,
+        rainfall_probability: data.daily.precipitation_probability_max[i] || 0,
+        humidity: data.daily.relative_humidity_2m_mean[i],
+        weather_condition: getWeatherCondition(data.daily.weather_code[i]),
+      });
+    }
+
+    await supabase
+      .from('weather_forecast')
+      .upsert(forecasts, { onConflict: 'district,forecast_date' });
+  } catch (error) {
+    console.error('Error fetching weather data:', error);
+  }
+}
+
+function getWeatherCondition(code: number): string {
+  if (code === 0) return 'Clear';
+  if (code <= 3) return 'Partly Cloudy';
+  if (code <= 48) return 'Cloudy';
+  if (code <= 67) return 'Rainy';
+  if (code <= 77) return 'Snowy';
+  if (code <= 99) return 'Thunderstorm';
+  return 'Clear';
 }
 
 export async function getRainfallSummary(district: string): Promise<{
