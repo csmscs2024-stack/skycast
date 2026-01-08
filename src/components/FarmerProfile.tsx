@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { supabase, Farmer } from '../lib/supabase';
 import { useToast } from '../hooks/use-toast';
 import { Calendar } from './ui/calendar';
@@ -23,6 +24,7 @@ const STAGES = ['Sowing', 'Vegetative', 'Flowering', 'Fruiting', 'Harvesting'];
 
 export function FarmerProfile({ farmerId, district, onProfileSave }: FarmerProfileProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [editing, setEditing] = useState(!farmerId);
   const [loading, setLoading] = useState(false);
@@ -94,6 +96,7 @@ export function FarmerProfile({ farmerId, district, onProfileSave }: FarmerProfi
           .insert({
             ...profile,
             district,
+            user_id: user?.id || null,
           })
           .select()
           .single();
@@ -108,10 +111,11 @@ export function FarmerProfile({ farmerId, district, onProfileSave }: FarmerProfi
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Profile save error:', error);
       toast({
         title: t('error'),
-        description: t('profileError'),
+        description: error?.message || t('profileError'),
         variant: 'destructive',
       });
     } finally {

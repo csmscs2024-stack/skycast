@@ -65,23 +65,8 @@ function App() {
     setLocation(selectedLocation);
   };
 
-  const handleProfileSave = async (farmerData: Farmer) => {
-    if (user && !farmerData.user_id) {
-      const { data } = await supabase
-        .from('farmers')
-        .update({ user_id: user.id })
-        .eq('id', farmerData.id)
-        .select()
-        .single();
-
-      if (data) {
-        setFarmer(data);
-      } else {
-        setFarmer(farmerData);
-      }
-    } else {
-      setFarmer(farmerData);
-    }
+  const handleProfileSave = (farmerData: Farmer) => {
+    setFarmer(farmerData);
   };
 
   if (authLoading || loadingProfile) {
