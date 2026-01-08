@@ -16,13 +16,17 @@ import { CalendarIcon } from 'lucide-react';
 interface FarmerProfileProps {
   farmerId?: string;
   district: string;
+  block?: string;
+  village?: string;
+  latitude?: number;
+  longitude?: number;
   onProfileSave: (farmer: Farmer) => void;
 }
 
 const CROPS = ['Rice (Paddy)', 'Potato', 'Mustard', 'Pulses', 'Vegetables'];
 const STAGES = ['Sowing', 'Vegetative', 'Flowering', 'Fruiting', 'Harvesting'];
 
-export function FarmerProfile({ farmerId, district, onProfileSave }: FarmerProfileProps) {
+export function FarmerProfile({ farmerId, district, block, village, latitude, longitude, onProfileSave }: FarmerProfileProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -32,6 +36,10 @@ export function FarmerProfile({ farmerId, district, onProfileSave }: FarmerProfi
     name: '',
     phone: '',
     district,
+    block,
+    village,
+    latitude,
+    longitude,
     primary_crop: '',
     crop_stage: '',
     sowing_date: '',
@@ -96,6 +104,10 @@ export function FarmerProfile({ farmerId, district, onProfileSave }: FarmerProfi
           .insert({
             ...profile,
             district,
+            block,
+            village,
+            latitude,
+            longitude,
             user_id: user?.id || null,
           })
           .select()

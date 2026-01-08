@@ -1,4 +1,4 @@
-import { Moon, Sun, Languages, User, LogOut, Cloud, Droplets, Compass, ShoppingCart, Lightbulb } from 'lucide-react';
+import { Moon, Sun, Languages, User, LogOut, Cloud, Droplets, Compass, ShoppingCart, Lightbulb, Users } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -15,9 +15,10 @@ import { useAuth } from '../contexts/AuthContext';
 interface HeaderProps {
   activeSection?: string;
   onNavigate?: (section: string) => void;
+  onSwitchProfile?: () => void;
 }
 
-export function Header({ activeSection, onNavigate }: HeaderProps) {
+export function Header({ activeSection, onNavigate, onSwitchProfile }: HeaderProps) {
   const { t, language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
@@ -94,6 +95,12 @@ export function Header({ activeSection, onNavigate }: HeaderProps) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {onSwitchProfile && (
+                    <DropdownMenuItem onClick={onSwitchProfile} className="text-base">
+                      <Users className="mr-2 h-4 w-4" />
+                      {t('switchProfile')}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => signOut()} className="text-base text-red-600">
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout

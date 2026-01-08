@@ -9,9 +9,11 @@ import { getWeatherData } from '../services/weatherService';
 
 interface RainfallSectionProps {
   district: string;
+  latitude?: number;
+  longitude?: number;
 }
 
-export function RainfallSection({ district }: RainfallSectionProps) {
+export function RainfallSection({ district, latitude, longitude }: RainfallSectionProps) {
   const { t } = useLanguage();
   const [rainfall, setRainfall] = useState<{
     todayRain: number;
@@ -24,13 +26,13 @@ export function RainfallSection({ district }: RainfallSectionProps) {
 
   useEffect(() => {
     loadRainfall();
-  }, [district]);
+  }, [district, latitude, longitude]);
 
   async function loadRainfall() {
     setLoading(true);
     try {
       const data = await getRainfallSummary(district);
-      const weatherData = await getWeatherData(district);
+      const weatherData = await getWeatherData(district, latitude, longitude);
 
       const chartData = weatherData.forecast.map(day => ({
         date: new Date(day.forecast_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),

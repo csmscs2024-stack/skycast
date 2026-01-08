@@ -6,21 +6,23 @@ import { getWeatherData, WeatherInfo } from '../services/weatherService';
 
 interface WeatherSectionProps {
   district: string;
+  latitude?: number;
+  longitude?: number;
 }
 
-export function WeatherSection({ district }: WeatherSectionProps) {
+export function WeatherSection({ district, latitude, longitude }: WeatherSectionProps) {
   const { t } = useLanguage();
   const [weather, setWeather] = useState<WeatherInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadWeather();
-  }, [district]);
+  }, [district, latitude, longitude]);
 
   async function loadWeather() {
     setLoading(true);
     try {
-      const data = await getWeatherData(district);
+      const data = await getWeatherData(district, latitude, longitude);
       setWeather(data);
     } catch (error) {
       console.error('Failed to load weather:', error);

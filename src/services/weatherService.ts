@@ -13,7 +13,7 @@ const DISTRICT_COORDS: Record<string, { lat: number; lon: number }> = {
   'Jhargram': { lat: 22.4525, lon: 86.9880 },
 };
 
-export async function getWeatherData(district: string): Promise<WeatherInfo> {
+export async function getWeatherData(district: string, latitude?: number, longitude?: number): Promise<WeatherInfo> {
   const today = new Date().toISOString().split('T')[0];
 
   const { data: currentData } = await supabase
@@ -32,13 +32,13 @@ export async function getWeatherData(district: string): Promise<WeatherInfo> {
     .limit(7);
 
   if (!currentData || !forecastData || forecastData.length === 0) {
-    await fetchRealWeatherData(district);
-    return getWeatherData(district);
+    await fetchRealWeatherData(district, latitude, longitude);
+    return getWeatherData(district, latitude, longitude);
   }
 
   const isOldData = currentData && new Date(currentData.created_at).getTime() < Date.now() - 3600000;
   if (isOldData) {
-    fetchRealWeatherData(district);
+    fetchRealWeatherData(district, latitude, longitude);
   }
 
   return {
@@ -47,8 +47,10 @@ export async function getWeatherData(district: string): Promise<WeatherInfo> {
   };
 }
 
-async function fetchRealWeatherData(district: string): Promise<void> {
-  const coords = DISTRICT_COORDS[district];
+async function fetchRealWeatherData(district: string, latitude?: number, longitude?: number): Promise<void> {
+  const coords = (latitude && longitude)
+    ? { lat: latitude, lon: longitude }
+    : DISTRICT_COORDS[district];
   if (!coords) return;
 
   try {

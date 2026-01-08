@@ -150,6 +150,13 @@ const translations = {
     selectCrop: 'ফসল নির্বাচন করুন',
     selectStage: 'পর্যায় নির্বাচন করুন',
     selectDate: 'তারিখ নির্বাচন করুন',
+
+    selectFarmerProfile: 'কৃষক প্রোফাইল নির্বাচন করুন',
+    chooseProfileOrCreateNew: 'আপনার প্রোফাইল বেছে নিন বা নতুন তৈরি করুন',
+    createFirstProfile: 'আপনার প্রথম কৃষক প্রোফাইল তৈরি করুন',
+    createNewProfile: 'নতুন প্রোফাইল তৈরি করুন',
+    switchProfile: 'প্রোফাইল পরিবর্তন করুন',
+    back: 'পিছনে',
   },
   en: {
     appName: 'Farming Assistant',
@@ -290,6 +297,13 @@ const translations = {
     selectCrop: 'Select crop',
     selectStage: 'Select stage',
     selectDate: 'Select date',
+
+    selectFarmerProfile: 'Select Farmer Profile',
+    chooseProfileOrCreateNew: 'Choose your profile or create a new one',
+    createFirstProfile: 'Create your first farmer profile',
+    createNewProfile: 'Create New Profile',
+    switchProfile: 'Switch Profile',
+    back: 'Back',
   },
 };
 

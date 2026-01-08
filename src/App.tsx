@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Auth } from './components/Auth';
-import { LocationSelector } from './components/LocationSelector';
+import { FarmerProfileSelector } from './components/FarmerProfileSelector';
 import { FarmerProfile } from './components/FarmerProfile';
 import { WeatherSection } from './components/WeatherSection';
 import { RainfallSection } from './components/RainfallSection';
 import { DecisionCards } from './components/DecisionCards';
 import { Marketplace } from './components/Marketplace';
-import { Farmer, supabase } from './lib/supabase';
+import { Farmer } from './lib/supabase';
 import { useLanguage } from './contexts/LanguageContext';
 import { useAuth } from './contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
@@ -24,6 +24,7 @@ function App() {
     longitude?: number;
   } | null>(null);
   const [farmer, setFarmer] = useState<Farmer | null>(null);
+  const [showProfileSelector, setShowProfileSelector] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
@@ -38,35 +39,49 @@ function App() {
     if (!user) return;
 
     try {
-      const { data: farmerData } = await supabase
-        .from('farmers')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (farmerData) {
-        setFarmer(farmerData);
-        setLocation({
-          district: farmerData.district,
-          block: farmerData.block,
-          village: farmerData.village,
-          latitude: farmerData.latitude,
-          longitude: farmerData.longitude,
-        });
+      const savedProfileId = localStorage.getItem(`selectedProfile_${user.id}`);
+      if (savedProfileId) {
+        setLoadingProfile(false);
+        setShowProfileSelector(true);
+      } else {
+        setLoadingProfile(false);
+        setShowProfileSelector(true);
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
-    } finally {
       setLoadingProfile(false);
+      setShowProfileSelector(true);
     }
   }
 
-  const handleLocationSelect = (selectedLocation: any) => {
-    setLocation(selectedLocation);
+  const handleProfileSelect = (selectedFarmer: Farmer) => {
+    setFarmer(selectedFarmer);
+    setLocation({
+      district: selectedFarmer.district,
+      block: selectedFarmer.block,
+      village: selectedFarmer.village,
+      latitude: selectedFarmer.latitude,
+      longitude: selectedFarmer.longitude,
+    });
+    setShowProfileSelector(false);
+    if (user) {
+      localStorage.setItem(`selectedProfile_${user.id}`, selectedFarmer.id);
+    }
+  };
+
+  const handleSwitchProfile = () => {
+    setShowProfileSelector(true);
   };
 
   const handleProfileSave = (farmerData: Farmer) => {
     setFarmer(farmerData);
+    setLocation({
+      district: farmerData.district,
+      block: farmerData.block,
+      village: farmerData.village,
+      latitude: farmerData.latitude,
+      longitude: farmerData.longitude,
+    });
   };
 
   if (authLoading || loadingProfile) {
@@ -84,41 +99,13 @@ function App() {
     return <Auth />;
   }
 
-  if (!location) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="container mx-auto px-4 py-6 md:py-8">
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                {t('welcome')}
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground">{t('appName')}</p>
-            </div>
-            <LocationSelector onLocationSelect={handleLocationSelect} />
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  if (!farmer) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="container mx-auto px-4 py-6 md:py-8">
-          <div className="max-w-2xl mx-auto">
-            <FarmerProfile district={location.district} onProfileSave={handleProfileSave} />
-          </div>
-        </main>
-      </div>
-    );
+  if (showProfileSelector || !farmer || !location) {
+    return <FarmerProfileSelector onProfileSelect={handleProfileSelect} />;
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <Header activeSection={activeSection} onNavigate={setActiveSection} />
+      <Header activeSection={activeSection} onNavigate={setActiveSection} onSwitchProfile={handleSwitchProfile} />
 
       <main className="container mx-auto px-4 py-6 md:py-8">
         {activeSection === 'dashboard' && (
@@ -152,11 +139,19 @@ function App() {
         )}
 
         {activeSection === 'weather' && (
-          <WeatherSection district={location.district} />
+          <WeatherSection
+            district={location.district}
+            latitude={location.latitude}
+            longitude={location.longitude}
+          />
         )}
 
         {activeSection === 'rainfall' && (
-          <RainfallSection district={location.district} />
+          <RainfallSection
+            district={location.district}
+            latitude={location.latitude}
+            longitude={location.longitude}
+          />
         )}
 
         {activeSection === 'decisions' && (
