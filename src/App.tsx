@@ -11,6 +11,7 @@ import { Farmer, supabase } from './lib/supabase';
 import { useLanguage } from './contexts/LanguageContext';
 import { useAuth } from './contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { seedAllData } from './services/seedData';
 
 function App() {
   const { t } = useLanguage();
@@ -25,6 +26,17 @@ function App() {
   } | null>(null);
   const [farmer, setFarmer] = useState<Farmer | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [dataSeeded, setDataSeeded] = useState(false);
+
+  useEffect(() => {
+    const initData = async () => {
+      if (!dataSeeded) {
+        await seedAllData();
+        setDataSeeded(true);
+      }
+    };
+    initData();
+  }, [dataSeeded]);
 
   useEffect(() => {
     if (user) {
