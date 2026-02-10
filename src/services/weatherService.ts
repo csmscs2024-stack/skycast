@@ -54,19 +54,9 @@ async function fetchRealWeatherData(district: string, latitude?: number, longitu
   if (!coords) return;
 
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,relative_humidity_2m_mean,wind_speed_10m_max,weather_code&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,weather_code&timezone=Asia/Kolkata`;
 
-    const url = `${supabaseUrl}/functions/v1/fetch_weather`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${anonKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ district, latitude, longitude }),
-    });
-
+    const response = await fetch(url);
     const data = await response.json();
 
     const today = new Date().toISOString().split('T')[0];
